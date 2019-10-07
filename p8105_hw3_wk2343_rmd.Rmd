@@ -65,6 +65,8 @@ instacart %>%
   count(aisle, name = "n_items_ordered") %>% 
   arrange(desc(n_items_ordered)) %>% 
   head(n = 10L) %>% 
+  rename("Aisles" = aisle,
+         "Items Ordered" = n_items_ordered) %>% 
   knitr::kable()
 ```
 
@@ -72,7 +74,24 @@ The top 10 ordered aisles are shown in the table above.
 Also, there are `r nlevels(pull(instacart,aisle))` aisles in the store.        
 
 ## 2. Plot aisles with more than 10000 items
+```{r}
+instacart %>% 
+  count(aisle, name = "n_items_ordered") %>% 
+# arrange by items ordered, and cut off those < 10000
+  arrange(desc(n_items_ordered)) %>% 
+  filter(n_items_ordered > 10000) %>% 
+# reorder aisle according to items ordered rank
+  mutate(rank = c(1: length(aisle) ),
+         aisle = fct_reorder(aisle, rank)) %>%
+  ggplot(aes(x = rank, y = n_items_ordered, fill = aisle)) + 
+  geom_bar(stat = "identity", width = 0.7) +
+  labs(title = "Aisles with > 10000 items ordered",
+       x = "Rank of items ordered",
+       y = "Items sum",
+       fill = "Aisles")
+```
 
+In this case, I consider bar plot useful to describe the 39 aisles that has more than 10,000 items ordered. While fresh vegetables stays at the top, buttler is ordered the least among these "popular" aisles. To facilitate reading, I set the order of aisles according to accumulative items ordered.
 
 ## 3. Most popular items in three aisles
 ```{r}
@@ -84,7 +103,10 @@ instacart %>%
          min_rank(desc(n)) < 4 & aisle == "dog food care" |
          min_rank(desc(n)) < 4 & aisle == "packaged vegetables fruits"
          ) %>% 
-  arrange(aisle, desc(n)) %>% 
+  arrange(aisle, desc(n)) %>%
+  rename("Aisles" = aisle,
+         "Product Name" = product_name,
+         "Items Ordered" = n) %>% 
   knitr::kable()
 ```
 
@@ -103,6 +125,7 @@ instacart %>%
     names_from = order_dow,
     values_from = mean_hour
   ) %>% 
+  rename("Product Name" = product_name) %>% 
   knitr::kable(digits = 0)
 ```
 
@@ -146,6 +169,9 @@ brfss_tidy %>%
 # summing up over distinct locations
   summarize(n = n_distinct(location)) %>% 
   filter(n >= 7) %>% 
+  rename("Year" = year,
+         "State" = state,
+         "Number of Locations" = n) %>% 
   knitr::kable()
 ```
 
@@ -165,9 +191,12 @@ brfss_tidy %>%
   ) %>% 
   ggplot(aes(x = year, y = mean_composition)) + 
     geom_line(aes(color = state)) + 
+    theme_set(theme_minimal() + theme(legend.position = "right")) +
     labs(title = "Time trend: average \"Excellent\" composition within states", 
-         x = "Year", y = "Composition(%)") + 
-    theme_set(theme_minimal() + theme(legend.position = "right"))
+         x = "Year", 
+         y = "Composition(%)",
+         color = "States")
+
 ```
 
 For "spaghetti" plot, since the data included all have corresponding discrete year,
@@ -181,9 +210,11 @@ brfss_tidy %>%
   select(year, location, answer_composition, response) %>%
   ggplot(aes(x = response, y = answer_composition, color = location)) + 
   geom_point(alpha = 0.5) + geom_line() + 
-  facet_grid(~ year) +
   labs(title = "Composition according to responses between locations",
-       x = "Response(Poor ~ Excellent)",y = "Composition(%)")
+       x = "Response(Poor ~ Excellent)",y = "Composition(%)",
+       color = "Locations") + 
+  facet_grid(~ year)
+
 ```
 
 Given the same reason in "Excellent" plot, I consider line plots as the best fit. To help better recognize each location, I put points on each data as well.
@@ -224,6 +255,8 @@ The resulting dataset has `r nrow(acc_data)` rows of observations, with `r ncol(
 acc_data %>% 
   group_by(day) %>% 
   summarize(day_sum = sum(activity)) %>% 
+  rename("Day of the Week" = day,
+         "Accumulated activity value" = day_sum) %>% 
   knitr::kable()
 ```
 
@@ -235,14 +268,15 @@ acc_data %>%
   group_by(day, minute) %>% 
   summarize(mean_activity = mean(activity)) %>% 
   ggplot(aes(x = minute ,y = mean_activity, color = day, fill = day)) + 
-  geom_point(alpha = 0.5) + 
-  scale_x_continuous(
-    breaks = c(seq(0, 1440, by = 60)),
-    labels = c(seq(0, 24, by = 1))) + 
+  geom_point() + 
   labs(
     title = "Activity status in 24 hours scale",
     x = "Hour in the day",
-    y = "Mean activity value")
+    y = "Mean activity value",
+    color = "Day of the week") + 
+  scale_x_continuous(
+    breaks = c(seq(0, 1440, by = 60)),
+    labels = c(seq(0, 24, by = 1))) 
 ```
 
 Trend that can be seen in this plot:
