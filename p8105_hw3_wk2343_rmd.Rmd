@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
   out.width = "90%"
 )
 options(
-  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.colour = "viridis", 
   ggplot2.continuous.fill = "viridis"
 )
 scale_colour_discrete = scale_colour_viridis_d
@@ -219,6 +219,11 @@ brfss_tidy %>%
 
 Given the same reason in "Excellent" plot, I consider line plots as the best fit. To help better recognize each location, I put points on each data as well.
 
+The trend from lowest(Poor) to highest(Excellent) remains similar between 2006 and 2010. While Good(3) and Very Good(4) remains the dominant compositions of the answers, Poor(1) stays at the lowest composition.         
+When comparing accross locations, Westchester stands out as the best county since it owns the highest composition of Very Good and Excellent response. On the contrary, Queens and Bronx shares an nearly identical distribution in 2006 and contains more Fair(2) and Poor responses.      
+In 2010, Westchester still enjoys the highest level of health, but Queens had decent progress. Unfortunately, Bronx remains the poorest in health condition response.
+
+
 # Problem 3
 
 ## 1. Clean data and describe
@@ -253,22 +258,26 @@ The resulting dataset has `r nrow(acc_data)` rows of observations, with `r ncol(
 
 ```{r}
 acc_data %>% 
-  group_by(day) %>% 
-  summarize(day_sum = sum(activity)) %>% 
-  rename("Day of the Week" = day,
+  group_by(week, day) %>% 
+  summarize(day_sum = sum(activity)) %>%
+  rename("Week" = week,
+         "Day of the Week" = day,
          "Accumulated activity value" = day_sum) %>% 
   knitr::kable()
 ```
 
-While there's a small peak at Wednesday to Friday, the subject have a regular activity basis. The only exception is Saturday, which recorded a relatively low total of activity value.
+  
+During weekdays, there' s a general upward activity trend from Monday to Friday in the first three weeks. While weekends activity drops a little bit.     
+However, The difference of weekday and weekends become more emergent in week 4 and 5. On Saturdays, the activity status even dropped to 1440, which might be data loss due to technical issues or the subjects wasn't wearing it at all.
+
 
 ## 3. Course of the day analysis
 ```{r}
 acc_data %>%
-  group_by(day, minute) %>% 
+  group_by(week, day, minute) %>% 
   summarize(mean_activity = mean(activity)) %>% 
-  ggplot(aes(x = minute ,y = mean_activity, color = day, fill = day)) + 
-  geom_point() + 
+  ggplot(aes(x = minute ,y = mean_activity, color = day)) + 
+  geom_point(alpha = 0.5) + 
   labs(
     title = "Activity status in 24 hours scale",
     x = "Hour in the day",
@@ -282,6 +291,5 @@ acc_data %>%
 Trend that can be seen in this plot:
 
 1.Two activity peak emerges accross days: 11-12 o'clock and 20-22 o' clock.     
-2.The most active day is Sunday, but not at night. Peak values at 20-22 period mostly belong to Friday.     
-3.The least active day is Saturday, which is corresponding to the result shown in part two.     
-4.Subject's inactive/rest cycle is generally from 23 o'clock to around 6:30 on the next day.  
+2.Peak values at 20-22 period mostly belong to Friday.     
+3.Subject's inactive/rest cycle is generally from 23 o'clock to around 6:30 on the next day.  
